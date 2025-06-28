@@ -1,4 +1,5 @@
 import * as React from "react";
+import { Search } from "lucide-react";
 
 const PERIODS = [
   { value: "1month", label: "1 Month" },
@@ -8,45 +9,78 @@ const PERIODS = [
   { value: "all", label: "All Time" },
 ];
 
-interface SearchBarProps {
-  value: string;
-  onChange: (v: string) => void;
-  onSubmit: (e?: React.FormEvent) => void;
-  period: string;
-  onPeriodChange: (v: string) => void;
-  loading: boolean;
-  error: string | null;
+interface Package {
+  name: string;
+  description: string;
+  downloads?: number;
 }
 
-export function SearchBar({ value, onChange, onSubmit, period, onPeriodChange, loading, error }: SearchBarProps) {
+interface SearchBarProps {
+  darkMode: boolean;
+  searchQuery: string;
+  searchResults: Package[];
+  showDropdown: boolean;
+  onSearchChange: (query: string) => void;
+  onKeyDown: (e: React.KeyboardEvent<HTMLInputElement>) => void;
+  onFocus: () => void;
+  onAddPackage: (packageName: string) => void;
+}
+
+export default function SearchBar({
+  darkMode,
+  searchQuery,
+  searchResults,
+  showDropdown,
+  onSearchChange,
+  onKeyDown,
+  onFocus,
+  onAddPackage
+}: SearchBarProps) {
   return (
-    <form onSubmit={onSubmit} className="flex flex-col sm:flex-row gap-2 w-full max-w-xl">
-      <input
-        type="text"
-        className="border rounded px-4 py-2 flex-1 text-base"
-        placeholder="Enter package names (comma or space separated)"
-        value={value}
-        onChange={(e) => onChange(e.target.value)}
-        disabled={loading}
-      />
-      <select
-        className="border rounded px-4 py-2 text-base"
-        value={period}
-        onChange={(e) => onPeriodChange(e.target.value)}
-        disabled={loading}
-      >
-        {PERIODS.map((p) => (
-          <option key={p.value} value={p.value}>{p.label}</option>
-        ))}
-      </select>
-      <button
-        type="submit"
-        className="bg-black text-white rounded px-6 py-2 font-semibold hover:bg-gray-800 transition"
-        disabled={loading}
-      >
-        {loading ? "Loading..." : "Compare"}
-      </button>
-      <div className="mt-2 text-red-500 min-h-[24px] w-full">{error}</div>
-    </form>
+    <div className="mb-8">
+      <div className="relative max-w-xl mx-auto">
+        <div className="relative">
+          <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+          <input
+            type="text"
+            placeholder="Enter a Python package..."
+            value={searchQuery}
+            onChange={(e) => onSearchChange(e.target.value)}
+            onKeyDown={onKeyDown}
+            onFocus={onFocus}
+            className={`w-full pl-12 pr-4 py-3 text-base border rounded-lg shadow-sm
+                     focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
+                       darkMode 
+                         ? 'bg-gray-800 border-gray-600 text-white placeholder-gray-400'
+                         : 'bg-white border-gray-300 text-gray-900 placeholder-gray-500'
+                     }`}
+          />
+        </div>
+        
+        {/* Search Dropdown */}
+        {showDropdown && searchResults.length > 0 && (
+          <div className={`absolute z-10 w-full mt-1 rounded-lg shadow-lg max-h-60 overflow-y-auto border ${
+            darkMode 
+              ? 'bg-gray-800 border-gray-600' 
+              : 'bg-white border-gray-300'
+          }`}>
+            {searchResults.map((pkg, index) => (
+              <button
+                key={index}
+                onClick={() => onAddPackage(pkg.name)}
+                className={`w-full px-4 py-3 text-left transition-colors border-b last:border-b-0 ${
+                  darkMode 
+                    ? 'hover:bg-gray-700 border-gray-600' 
+                    : 'hover:bg-gray-100 border-gray-200'
+                }`}
+              >
+                <div className={`text-sm font-medium ${darkMode ? 'text-white' : 'text-gray-900'}`}>{pkg.name}</div>
+                <div className={`text-xs mt-1 truncate ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>{pkg.description}</div>
+              </button>
+            ))}
+          </div>
+        )}
+      </div>
+    </div>
   );
 } 

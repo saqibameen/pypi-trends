@@ -1,19 +1,17 @@
 import * as React from "react";
 import { useState, useEffect } from "react";
-import { Moon, Sun, X, Plus, ChevronDown, Loader2, RefreshCw, Search } from "lucide-react";
-import { Line, LineChart, XAxis, YAxis, ResponsiveContainer, Tooltip, Legend } from "recharts";
+import Header from "../components/Header";
+import SearchBar from "../components/SearchBar";
+import PackageTags from "../components/PackageTags";
+import PeriodSelector, { type Period } from "../components/PeriodSelector";
+import DownloadChart from "../components/DownloadChart";
+import PackageStats from "../components/PackageStats";
+import EmptyState from "../components/EmptyState";
 
-// Period options for the dropdown
-const PERIOD_OPTIONS = [
-  { value: "1month", label: "1 Month" },
-  { value: "3month", label: "3 Months" },
-  { value: "6month", label: "6 Months" },
-  { value: "1year", label: "1 Year" },
-  { value: "2year", label: "2 Years" },
-  { value: "all", label: "All Time" },
-] as const;
-
-type Period = typeof PERIOD_OPTIONS[number]["value"];
+// Package colors for chart lines
+const packageColors = [
+  "#3b82f6", "#ef4444", "#10b981", "#f59e0b", "#8b5cf6", "#06b6d4", "#f97316", "#84cc16"
+];
 
 // Package search results interface
 interface Package {
@@ -36,10 +34,6 @@ interface PackageTimeSeriesData {
   cached?: boolean;
   error?: string;
 }
-
-const packageColors = [
-  "#3b82f6", "#ef4444", "#10b981", "#f59e0b", "#8b5cf6", "#06b6d4", "#f97316", "#84cc16"
-];
 
 // Search packages with both predefined and API search
 const searchPackages = async (query: string): Promise<Package[]> => {
@@ -151,6 +145,7 @@ const transformDataForChart = (packagesData: PackageTimeSeriesData[]): any[] => 
     "6month": 8,     // Monthly for 6 months
     "1year": 15,     // Monthly for 1 year
     "2year": 30,     // Monthly for 2 years
+    "5year": 60,     // Monthly for 5 years
     "all": 10        // Yearly
   };
 
@@ -208,6 +203,7 @@ const formatDate = (dateStr: string, period: Period) => {
         year: 'numeric'
       });
     case "2year":
+    case "5year":
     case "all":
       // Yearly: "2024"
       return date.getFullYear().toString();
@@ -216,54 +212,7 @@ const formatDate = (dateStr: string, period: Period) => {
   }
 };
 
-// Custom tooltip for the chart
-const CustomTooltip = ({ active, payload, label }: any) => {
-  if (active && payload && payload.length) {
-    return (
-      <div className="bg-white border border-gray-200 rounded-lg shadow-lg p-3">
-        <p className="text-sm font-medium text-gray-900 mb-2">{label}</p>
-        {payload.map((entry: any, index: number) => (
-          <div key={index} className="flex items-center gap-2 text-sm">
-            <div 
-              className="w-3 h-3 rounded-full" 
-              style={{ backgroundColor: entry.color }}
-            />
-            <span className="text-gray-600">{entry.dataKey}:</span>
-            <span className="font-medium text-gray-900">{formatNumber(entry.value)}</span>
-          </div>
-        ))}
-      </div>
-    );
-  }
-  return null;
-};
 
-// Loading skeleton for chart
-const ChartSkeleton = ({ darkMode }: { darkMode: boolean }) => (
-  <div className={`w-full h-96 rounded-lg animate-pulse flex items-center justify-center ${
-    darkMode ? 'bg-gray-800' : 'bg-gray-50'
-  }`}>
-    <div className={`${darkMode ? 'text-gray-500' : 'text-gray-400'}`}>Loading chart...</div>
-  </div>
-);
-
-// Loading skeleton for stats
-const StatsSkeleton = ({ darkMode }: { darkMode: boolean }) => (
-  <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
-    {[1, 2, 3].map((i) => (
-      <div key={i} className={`rounded-lg p-4 animate-pulse ${
-        darkMode ? 'bg-gray-800' : 'bg-gray-50'
-      }`}>
-        <div className={`h-4 rounded mb-2 ${
-          darkMode ? 'bg-gray-600' : 'bg-gray-300'
-        }`}></div>
-        <div className={`h-6 rounded ${
-          darkMode ? 'bg-gray-600' : 'bg-gray-300'
-        }`}></div>
-      </div>
-    ))}
-  </div>
-);
 
 export default function Home() {
   // State management
@@ -399,245 +348,56 @@ export default function Home() {
 
   return (
     <div className={`h-screen flex flex-col ${darkMode ? 'bg-gray-900' : 'bg-gray-50'}`}>
-        {/* Header */}
-      <div className={`border-b flex-shrink-0 ${darkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'}`}>
-        <div className="max-w-5xl mx-auto px-6 py-6">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className="w-7 h-7 bg-blue-500 rounded-md flex items-center justify-center">
-                <div className="w-4 h-4 bg-white rounded-sm" />
-              </div>
-              <h1 className={`text-xl font-semibold ${darkMode ? 'text-white' : 'text-gray-900'}`}>pypi trends</h1>
-          </div>
-            
-          <button
-            onClick={() => setDarkMode(!darkMode)}
-              className={`p-2 rounded-lg transition-colors border ${
-                darkMode 
-                  ? 'bg-gray-700 hover:bg-gray-600 border-gray-600' 
-                  : 'bg-gray-100 hover:bg-gray-200 border-gray-300'
-              }`}
-            >
-              {darkMode ? (
-                <Sun className={`w-4 h-4 ${darkMode ? 'text-gray-300' : 'text-gray-700'}`} />
-              ) : (
-                <Moon className={`w-4 h-4 ${darkMode ? 'text-gray-300' : 'text-gray-700'}`} />
-              )}
-          </button>
-        </div>
-
-          <p className={`mt-2 text-sm ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>
-            Compare and discover download trends for Python packages over time
-          </p>
-        </div>
-      </div>
+      <Header darkMode={darkMode} onToggleDarkMode={() => setDarkMode(!darkMode)} />
 
       <div className="flex-1 overflow-y-auto">
         <div className="max-w-5xl mx-auto px-6 py-8">
-        {/* Search Section */}
-          <div className="mb-8">
-            <div className="relative max-w-xl mx-auto">
-              <div className="relative">
-                <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
-            <input
-              type="text"
-                  placeholder="Enter a Python package..."
-              value={searchQuery}
-              onChange={(e) => handleSearch(e.target.value)}
-              onKeyDown={handleKeyDown}
-                  onFocus={() => searchResults.length > 0 && setShowDropdown(true)}
-                  className={`w-full pl-12 pr-4 py-3 text-base border rounded-lg shadow-sm
-                           focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
-                             darkMode 
-                               ? 'bg-gray-800 border-gray-600 text-white placeholder-gray-400'
-                               : 'bg-white border-gray-300 text-gray-900 placeholder-gray-500'
-                           }`}
-                />
-              </div>
-              
-              {/* Search Dropdown */}
-              {showDropdown && searchResults.length > 0 && (
-                <div className={`absolute z-10 w-full mt-1 rounded-lg shadow-lg max-h-60 overflow-y-auto border ${
-                  darkMode 
-                    ? 'bg-gray-800 border-gray-600' 
-                    : 'bg-white border-gray-300'
-                }`}>
-                  {searchResults.map((pkg, index) => (
-                    <button
-                      key={index}
-                      onClick={() => addPackage(pkg.name)}
-                      className={`w-full px-4 py-3 text-left transition-colors border-b last:border-b-0 ${
-                        darkMode 
-                          ? 'hover:bg-gray-700 border-gray-600' 
-                          : 'hover:bg-gray-100 border-gray-200'
-                      }`}
-                    >
-                      <div className={`text-sm font-medium ${darkMode ? 'text-white' : 'text-gray-900'}`}>{pkg.name}</div>
-                      <div className={`text-xs mt-1 truncate ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>{pkg.description}</div>
-                    </button>
-                  ))}
-                </div>
-              )}
-            </div>
+          <SearchBar
+            darkMode={darkMode}
+            searchQuery={searchQuery}
+            searchResults={searchResults}
+            showDropdown={showDropdown}
+            onSearchChange={handleSearch}
+            onKeyDown={handleKeyDown}
+            onFocus={() => searchResults.length > 0 && setShowDropdown(true)}
+            onAddPackage={addPackage}
+          />
 
-            {/* Selected Packages */}
-            {selectedPackages.length > 0 && (
-              <div className="flex flex-wrap gap-2 mt-6 justify-center">
-                {selectedPackages.map((pkg, index) => (
-                  <div
-                    key={pkg}
-                    className={`flex items-center gap-2 px-3 py-1.5 rounded-full shadow-sm border ${
-                      darkMode 
-                        ? 'bg-gray-800 border-gray-600' 
-                        : 'bg-white border-gray-300'
-                    }`}
-                  >
-                    <div 
-                      className="w-2.5 h-2.5 rounded-full"
-                      style={{ backgroundColor: packageColors[index % packageColors.length] }}
-                    />
-                    <span className={`text-sm font-medium ${darkMode ? 'text-white' : 'text-gray-900'}`}>{pkg}</span>
-                    <button
-                      onClick={() => removePackage(pkg)}
-                      className={`ml-1 p-0.5 rounded-full transition-colors ${
-                        darkMode ? 'hover:bg-gray-700' : 'hover:bg-gray-200'
-                      }`}
-                    >
-                      <X className={`w-3 h-3 ${darkMode ? 'text-gray-400' : 'text-gray-500'}`} />
-                    </button>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
+          <PackageTags
+            darkMode={darkMode}
+            selectedPackages={selectedPackages}
+            packageColors={packageColors}
+            onRemovePackage={removePackage}
+          />
 
-          {/* Main Content */}
           {selectedPackages.length > 0 && (
             <>
-              {/* Period Selector */}
-              <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
-                <h2 className={`text-lg font-medium ${darkMode ? 'text-white' : 'text-gray-900'}`}>
-                  Downloads in past{" "}
-                  <select
-                    value={period}
-                    onChange={(e) => changePeriod(e.target.value as Period)}
-                    className={`ml-2 px-3 py-1 border rounded-md text-base
-                             focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
-                               darkMode 
-                                 ? 'bg-gray-800 border-gray-600 text-white'
-                                 : 'bg-white border-gray-300 text-gray-900'
-                             }`}
-                        >
-                    {PERIOD_OPTIONS.map((option) => (
-                      <option key={option.value} value={option.value}>
-                        {option.label}
-                      </option>
-                    ))}
-                  </select>
-                </h2>
-              </div>
+              <PeriodSelector
+                darkMode={darkMode}
+                period={period}
+                onPeriodChange={changePeriod}
+              />
 
-              {/* Chart */}
-              <div className={`rounded-xl shadow-sm mb-6 border ${
-                darkMode 
-                  ? 'bg-gray-800 border-gray-600' 
-                  : 'bg-white border-gray-300'
-              }`}>
-              {loading ? (
-                  <div className="p-8">
-                <ChartSkeleton darkMode={darkMode} />
-                  </div>
-              ) : chartData.length > 0 ? (
-                  <div className="p-6">
-                    <div className="w-full h-80">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <LineChart data={chartData} margin={{ top: 20, right: 30, left: 20, bottom: 20 }}>
-                      <XAxis 
-                        dataKey="date" 
-                            stroke={darkMode ? "#9CA3AF" : "#6B7280"}
-                            fontSize={12}
-                            tickFormatter={(value) => formatDate(value, period)}
-                        axisLine={false}
-                        tickLine={false}
-                      />
-                      <YAxis 
-                            stroke={darkMode ? "#9CA3AF" : "#6B7280"}
-                            fontSize={12}
-                            tickFormatter={formatNumber}
-                        axisLine={false}
-                        tickLine={false}
-                      />
-                          <Tooltip content={<CustomTooltip />} />
-                          {selectedPackages.map((pkg, index) => (
-                          <Line
-                            key={pkg}
-                            type="monotone"
-                            dataKey={pkg}
-                            stroke={packageColors[index % packageColors.length]}
-                              strokeWidth={2.5}
-                              dot={false}
-                              activeDot={{ r: 4, fill: packageColors[index % packageColors.length] }}
-                          />
-                          ))}
-                    </LineChart>
-                  </ResponsiveContainer>
-                </div>
-                        </div>
-                      ) : (
-                  <div className="p-8 text-center">
-                    <div className={`${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
-                      No data available for the selected packages and period
-                          </div>
-                          </div>
-                      )}
-                    </div>
+              <DownloadChart
+                darkMode={darkMode}
+                loading={loading}
+                chartData={chartData}
+                selectedPackages={selectedPackages}
+                packageColors={packageColors}
+                period={period}
+              />
 
-              {/* Package Download Totals */}
-              {!loading && packagesData.length > 0 && (
-                <div className={`grid gap-4 ${
-                  packagesData.length === 1 ? 'grid-cols-1 max-w-sm mx-auto' :
-                  packagesData.length === 2 ? 'grid-cols-1 md:grid-cols-2' :
-                  'grid-cols-1 md:grid-cols-3'
-                }`}>
-                  {packagesData.map((pkg, index) => {
-                    const totalForPackage = pkg.data.reduce((sum: number, item: any) => sum + item.downloads, 0);
-                    return (
-                      <div key={pkg.package} className={`rounded-xl shadow-sm p-6 border ${
-                        darkMode ? 'bg-gray-800 border-gray-600' : 'bg-white border-gray-300'
-                      }`}>
-                        <div className="flex items-center gap-2 mb-2">
-                          <div 
-                            className="w-3 h-3 rounded-full"
-                            style={{ backgroundColor: packageColors[index % packageColors.length] }}
-                          />
-                          <div className={`text-sm ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>{pkg.package}</div>
-                        </div>
-                        <div className={`text-2xl font-semibold ${darkMode ? 'text-white' : 'text-gray-900'}`}>
-                          {formatNumber(totalForPackage)}
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              )}
+              <PackageStats
+                darkMode={darkMode}
+                loading={loading}
+                packagesData={packagesData}
+                packageColors={packageColors}
+              />
             </>
           )}
 
-          {/* Empty State */}
           {selectedPackages.length === 0 && (
-            <div className="text-center py-20">
-              <div className={`w-16 h-16 rounded-full mx-auto mb-6 flex items-center justify-center shadow-sm border ${
-                darkMode ? 'bg-gray-800 border-gray-600' : 'bg-white border-gray-300'
-              }`}>
-                <Search className="w-8 h-8 text-gray-400" />
-              </div>
-              <h3 className={`text-lg font-medium mb-2 ${darkMode ? 'text-white' : 'text-gray-900'}`}>
-                Search for Python packages
-              </h3>
-              <p className={`max-w-md mx-auto ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
-                Start by searching for Python packages above to compare their download trends over time.
-              </p>
-            </div>
+            <EmptyState darkMode={darkMode} />
           )}
 
           {/* Error State */}
