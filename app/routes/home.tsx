@@ -1,6 +1,6 @@
 import * as React from "react";
 import { useState, useEffect } from "react";
-import { Moon, Sun, X, Plus, ChevronDown, Loader2, RefreshCw } from "lucide-react";
+import { Moon, Sun, X, Plus, ChevronDown, Loader2, RefreshCw, Search } from "lucide-react";
 import { Line, LineChart, XAxis, YAxis, ResponsiveContainer, Tooltip, Legend } from "recharts";
 
 // Period options for the dropdown
@@ -38,7 +38,7 @@ interface PackageTimeSeriesData {
 }
 
 const packageColors = [
-  "#ef4444", "#3b82f6", "#10b981", "#f59e0b", "#8b5cf6", "#06b6d4", "#f97316", "#84cc16"
+  "#3b82f6", "#ef4444", "#10b981", "#f59e0b", "#8b5cf6", "#06b6d4", "#f97316", "#84cc16"
 ];
 
 // Search packages with both predefined and API search
@@ -199,845 +199,453 @@ const formatDate = (dateStr: string, period: Period) => {
         month: 'short', 
         day: 'numeric'
       });
-    
     case "3month":
-      // Weekly: "Jan 15" or "Jan 15 '25" for new year
-      const isNewYear = date.getMonth() === 0 && date.getDate() <= 7;
-      return date.toLocaleDateString('en-US', { 
-        month: 'short', 
-        day: 'numeric',
-        ...(isNewYear ? { year: '2-digit' } : {})
-      });
-    
     case "6month":
-      // Monthly: "Jan", "Feb", "Mar"
-      return date.toLocaleDateString('en-US', { 
-        month: 'short'
-      });
-    
     case "1year":
-      // Monthly: "Jan 2025"
+      // Monthly: "Jan 2024"
       return date.toLocaleDateString('en-US', { 
         month: 'short', 
         year: 'numeric'
       });
-    
     case "2year":
-      // Monthly: "Jan '25"
-      return date.toLocaleDateString('en-US', { 
-        month: 'short', 
-        year: '2-digit'
-      });
-    
     case "all":
-      // Yearly: "2025"
+      // Yearly: "2024"
       return date.getFullYear().toString();
-    
     default:
-      return date.toLocaleDateString('en-US', { 
-        month: 'short', 
-        day: 'numeric'
-      });
+      return dateStr;
   }
 };
 
-// Skeleton components
+// Custom tooltip for the chart
+const CustomTooltip = ({ active, payload, label }: any) => {
+  if (active && payload && payload.length) {
+    return (
+      <div className="bg-white border border-gray-200 rounded-lg shadow-lg p-3">
+        <p className="text-sm font-medium text-gray-900 mb-2">{label}</p>
+        {payload.map((entry: any, index: number) => (
+          <div key={index} className="flex items-center gap-2 text-sm">
+            <div 
+              className="w-3 h-3 rounded-full" 
+              style={{ backgroundColor: entry.color }}
+            />
+            <span className="text-gray-600">{entry.dataKey}:</span>
+            <span className="font-medium text-gray-900">{formatNumber(entry.value)}</span>
+          </div>
+        ))}
+      </div>
+    );
+  }
+  return null;
+};
+
+// Loading skeleton for chart
 const ChartSkeleton = ({ darkMode }: { darkMode: boolean }) => (
-  <div style={{ height: "400px", width: "100%", position: "relative" }}>
-    <div style={{
-      width: "100%",
-      height: "100%",
-      backgroundColor: darkMode ? "#334155" : "#f1f5f9",
-      borderRadius: "8px",
-      position: "relative",
-      overflow: "hidden"
-    }}>
-      <div style={{
-        position: "absolute",
-        top: 0,
-        left: "-100%",
-        width: "100%",
-        height: "100%",
-        background: `linear-gradient(90deg, transparent, ${darkMode ? "rgba(255,255,255,0.1)" : "rgba(255,255,255,0.8)"}, transparent)`,
-        animation: "shimmer 2s infinite"
-      }} />
-    </div>
+  <div className={`w-full h-96 rounded-lg animate-pulse flex items-center justify-center ${
+    darkMode ? 'bg-gray-800' : 'bg-gray-50'
+  }`}>
+    <div className={`${darkMode ? 'text-gray-500' : 'text-gray-400'}`}>Loading chart...</div>
   </div>
 );
 
+// Loading skeleton for stats
 const StatsSkeleton = ({ darkMode }: { darkMode: boolean }) => (
-  <div style={{
-    display: "grid",
-    gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))",
-    gap: "16px",
-    marginTop: "32px",
-    paddingTop: "24px",
-    borderTop: `1px solid ${darkMode ? "#334155" : "#f1f5f9"}`
-  }}>
+  <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
     {[1, 2, 3].map((i) => (
-      <div key={i} style={{
-        padding: "16px",
-        borderRadius: "8px",
-        backgroundColor: darkMode ? "#0f172a" : "#f8fafc",
-        border: `1px solid ${darkMode ? "#334155" : "#e2e8f0"}`
-      }}>
-        <div style={{
-          height: "20px",
-          backgroundColor: darkMode ? "#334155" : "#e2e8f0",
-          borderRadius: "4px",
-          marginBottom: "8px",
-          width: "60%"
-        }} />
-        <div style={{
-          height: "24px",
-          backgroundColor: darkMode ? "#334155" : "#e2e8f0",
-          borderRadius: "4px",
-          marginBottom: "4px",
-          width: "80%"
-        }} />
-        <div style={{
-          height: "14px",
-          backgroundColor: darkMode ? "#334155" : "#e2e8f0",
-          borderRadius: "4px",
-          width: "40%"
-        }} />
+      <div key={i} className={`rounded-lg p-4 animate-pulse ${
+        darkMode ? 'bg-gray-800' : 'bg-gray-50'
+      }`}>
+        <div className={`h-4 rounded mb-2 ${
+          darkMode ? 'bg-gray-600' : 'bg-gray-300'
+        }`}></div>
+        <div className={`h-6 rounded ${
+          darkMode ? 'bg-gray-600' : 'bg-gray-300'
+        }`}></div>
       </div>
     ))}
   </div>
 );
 
 export default function Home() {
-  const [darkMode, setDarkMode] = useState(false);
-  const [searchQuery, setSearchQuery] = useState("");
-  const [selectedPackages, setSelectedPackages] = useState<string[]>(["requests", "numpy", "pandas"]);
-  const [selectedPeriod, setSelectedPeriod] = useState<Period>("1year");
-  const [searchResults, setSearchResults] = useState<Package[]>([]);
+  // State management
+  const [selectedPackages, setSelectedPackages] = useState<string[]>([]);
   const [packagesData, setPackagesData] = useState<PackageTimeSeriesData[]>([]);
+  const [period, setPeriod] = useState<Period>("1year");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [showPeriodDropdown, setShowPeriodDropdown] = useState(false);
-  const [refreshingPackages, setRefreshingPackages] = useState<Set<string>>(new Set());
+  const [darkMode, setDarkMode] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [searchResults, setSearchResults] = useState<Package[]>([]);
+  const [showDropdown, setShowDropdown] = useState(false);
+  const [loadingPackages, setLoadingPackages] = useState<string[]>([]);
 
+  // Theme management
   useEffect(() => {
-    if (typeof window !== "undefined") {
-      const isDark = localStorage.getItem("darkMode") === "true";
-      setDarkMode(isDark);
-      
-      // Add CSS animation for shimmer effect
-      const style = document.createElement('style');
-      style.textContent = `
-        @keyframes shimmer {
-          0% { transform: translateX(-100%); }
-          100% { transform: translateX(100%); }
-        }
-        @keyframes spin {
-          from { transform: rotate(0deg); }
-          to { transform: rotate(360deg); }
-        }
-        .spin {
-          animation: spin 1s linear infinite;
-        }
-      `;
-      document.head.appendChild(style);
-    }
+    // Always start in light mode - don't read from localStorage yet
+    setDarkMode(false);
+    document.documentElement.classList.remove('dark');
   }, []);
 
   useEffect(() => {
+    localStorage.setItem('darkMode', JSON.stringify(darkMode));
     if (darkMode) {
-      document.documentElement.classList.add("dark");
-      localStorage.setItem("darkMode", "true");
+      document.documentElement.classList.add('dark');
     } else {
-      document.documentElement.classList.remove("dark");
-      localStorage.setItem("darkMode", "false");
+      document.documentElement.classList.remove('dark');
     }
   }, [darkMode]);
 
-  // Fetch data when packages or period changes
-  useEffect(() => {
-    if (selectedPackages.length > 0) {
-      fetchAllPackagesData();
-    } else {
-      setPackagesData([]);
-    }
-  }, [selectedPackages, selectedPeriod]);
-
+  // Fetch data for all selected packages
   const fetchAllPackagesData = async () => {
+    if (selectedPackages.length === 0) {
+      setPackagesData([]);
+      return;
+    }
+
     setLoading(true);
     setError(null);
     
     try {
-      const promises = selectedPackages.map(pkg => fetchPackageData(pkg, selectedPeriod));
+      const promises = selectedPackages.map(pkg => fetchPackageData(pkg, period));
       const results = await Promise.all(promises);
-      
-      // Check for errors
-      const errors = results.filter(result => result.error);
-      if (errors.length > 0) {
-        setError(`Failed to fetch data for: ${errors.map(e => e.package).join(', ')}`);
-      }
-      
-      // Only include successful results
-      const successfulResults = results.filter(result => !result.error);
-      setPackagesData(successfulResults);
+      setPackagesData(results);
     } catch (err) {
-      console.error("Error fetching packages data:", err);
-      setError("Failed to fetch package data. Please try again.");
-      setPackagesData([]);
+      setError(err instanceof Error ? err.message : "An error occurred");
     } finally {
       setLoading(false);
     }
   };
 
-  // Refresh specific package data (with cache busting)
+  // Refresh specific package data
   const refreshPackageData = async (packageName: string) => {
-    setRefreshingPackages(prev => new Set(prev).add(packageName));
+    setLoadingPackages(prev => [...prev, packageName]);
     
     try {
-      // Add timestamp to bust cache
-      const timestamp = Date.now();
-      const response = await fetch(`/api/downloads/${packageName}/timeseries?period=${selectedPeriod}&_t=${timestamp}`);
-      
-      if (!response.ok) {
-        throw new Error(`Failed to fetch data for ${packageName}: ${response.statusText}`);
-      }
-      
-      const newData: PackageTimeSeriesData = await response.json();
-      
-      // Update the packagesData with fresh data for this package
-      setPackagesData(prevData => 
-        prevData.map(pkg => 
-          pkg.package === packageName ? newData : pkg
+      const refreshedData = await fetchPackageData(packageName, period);
+      setPackagesData(prev => 
+        prev.map(pkg => 
+          pkg.package === packageName ? refreshedData : pkg
         )
       );
-      
-    } catch (error) {
-      console.error(`Error refreshing data for ${packageName}:`, error);
-      setError(`Failed to refresh data for ${packageName}. Please try again.`);
+    } catch (err) {
+      console.error("Error refreshing package data:", err);
+      setError(err instanceof Error ? err.message : "Failed to refresh data");
     } finally {
-      setRefreshingPackages(prev => {
-        const newSet = new Set(prev);
-        newSet.delete(packageName);
-        return newSet;
-      });
+      setLoadingPackages(prev => prev.filter(pkg => pkg !== packageName));
     }
   };
 
+  // Handle search input
   const handleSearch = async (query: string) => {
     setSearchQuery(query);
-    if (query.length > 1) {
-      const results = await searchPackages(query);
-      // Filter out already selected packages
-      const filtered = results.filter(pkg => !selectedPackages.includes(pkg.name));
-      setSearchResults(filtered);
-    } else {
+    
+    if (query.length < 2) {
       setSearchResults([]);
+      setShowDropdown(false);
+      return;
     }
+
+    const results = await searchPackages(query);
+    setSearchResults(results);
+    setShowDropdown(true);
   };
 
+  // Handle search input key events
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Enter') {
       e.preventDefault();
-      
-      if (searchResults.length > 0) {
-        // Add the first search result
-        addPackage(searchResults[0].name);
-      } else if (searchQuery.trim().length > 0) {
-        // Add the typed query as package name
+      if (searchQuery.trim()) {
         addPackage(searchQuery.trim().toLowerCase());
       }
+    } else if (e.key === 'Escape') {
+      setShowDropdown(false);
     }
   };
 
+  // Add package to selection
   const addPackage = (packageName: string) => {
-    if (!selectedPackages.includes(packageName) && selectedPackages.length < 8) {
-      setSelectedPackages([...selectedPackages, packageName]);
+    if (!selectedPackages.includes(packageName)) {
+      setSelectedPackages(prev => [...prev, packageName]);
     }
     setSearchQuery("");
     setSearchResults([]);
+    setShowDropdown(false);
   };
 
+  // Remove package from selection
   const removePackage = (packageName: string) => {
-    setSelectedPackages(selectedPackages.filter((pkg) => pkg !== packageName));
+    setSelectedPackages(prev => prev.filter(pkg => pkg !== packageName));
   };
 
+  // Change time period
   const changePeriod = (period: Period) => {
-    setSelectedPeriod(period);
-    setShowPeriodDropdown(false);
+    setPeriod(period);
   };
 
+  // Fetch data when packages or period changes
+  useEffect(() => {
+    fetchAllPackagesData();
+  }, [selectedPackages, period]);
+
+  // Prepare chart data
   const chartData = transformDataForChart(packagesData);
 
-  const containerStyle: React.CSSProperties = {
-    minHeight: "100vh",
-    backgroundColor: darkMode ? "#0f172a" : "#f8fafc",
-    fontFamily: "Inter, -apple-system, BlinkMacSystemFont, sans-serif"
-  };
-
-  const mainStyle: React.CSSProperties = {
-    maxWidth: "1200px",
-    margin: "0 auto",
-    padding: "0 16px"
-  };
-
-  const headerStyle: React.CSSProperties = {
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "space-between",
-    padding: "24px 0",
-    borderBottom: `1px solid ${darkMode ? "#334155" : "#e2e8f0"}`
-  };
-
-  const searchSectionStyle: React.CSSProperties = {
-    padding: "32px 0",
-    borderBottom: `1px solid ${darkMode ? "#334155" : "#f1f5f9"}`
-  };
-
-  const searchContainerStyle: React.CSSProperties = {
-    position: "relative",
-    maxWidth: "500px"
-  };
-
-  const inputStyle: React.CSSProperties = {
-    width: "100%",
-    height: "48px",
-    padding: "0 16px",
-    border: `2px solid ${darkMode ? "#475569" : "#e2e8f0"}`,
-    borderRadius: "12px",
-    backgroundColor: darkMode ? "#1e293b" : "#ffffff",
-    color: darkMode ? "#ffffff" : "#0f172a",
-    outline: "none",
-    fontSize: "16px",
-    transition: "border-color 0.2s ease"
-  };
-
-  const controlsStyle: React.CSSProperties = {
-    display: "flex",
-    alignItems: "center",
-    gap: "16px",
-    marginTop: "16px"
-  };
-
-  const dropdownStyle: React.CSSProperties = {
-    position: "relative"
-  };
-
-  const dropdownButtonStyle: React.CSSProperties = {
-    display: "flex",
-    alignItems: "center",
-    gap: "8px",
-    padding: "8px 16px",
-    border: `1px solid ${darkMode ? "#475569" : "#e2e8f0"}`,
-    borderRadius: "8px",
-    backgroundColor: darkMode ? "#1e293b" : "#ffffff",
-    color: darkMode ? "#ffffff" : "#0f172a",
-    cursor: "pointer",
-    fontSize: "14px",
-    fontWeight: "500"
-  };
-
-  const chartSectionStyle: React.CSSProperties = {
-    padding: "40px 0"
-  };
-
-  const chartCardStyle: React.CSSProperties = {
-    backgroundColor: darkMode ? "#1e293b" : "#ffffff",
-    borderRadius: "16px",
-    padding: "32px",
-    border: `1px solid ${darkMode ? "#334155" : "#e2e8f0"}`,
-    boxShadow: darkMode ? "none" : "0 4px 6px -1px rgba(0, 0, 0, 0.1)"
-  };
-
-  const packageTagsStyle: React.CSSProperties = {
-    display: "flex",
-    flexWrap: "wrap",
-    gap: "12px",
-    marginBottom: "24px"
-  };
+  // Calculate summary stats
+  const totalDownloads = packagesData.reduce((sum, pkg) => sum + (pkg.total_downloads || 0), 0);
+  const avgDownloads = selectedPackages.length > 0 ? Math.round(totalDownloads / selectedPackages.length) : 0;
+  const mostPopular = packagesData.reduce((max, pkg) => 
+    (pkg.total_downloads || 0) > (max.total_downloads || 0) ? pkg : max, 
+    packagesData[0] || { package: "N/A", total_downloads: 0 }
+  );
 
   return (
-    <div style={containerStyle}>
-      <div style={mainStyle}>
+    <div className={`h-screen flex flex-col ${darkMode ? 'bg-gray-900' : 'bg-gray-50'}`}>
         {/* Header */}
-        <div style={headerStyle}>
-          <div>
-            <h1 style={{ 
-              fontSize: "32px", 
-              fontWeight: "700", 
-              color: darkMode ? "#ffffff" : "#0f172a",
-              margin: "0 0 8px 0" 
-            }}>
-              PyPI Trends
-            </h1>
-            <p style={{
-              fontSize: "16px",
-              color: darkMode ? "#94a3b8" : "#64748b",
-              margin: 0
-            }}>
-              Compare Python package download statistics
-            </p>
+      <div className={`border-b flex-shrink-0 ${darkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'}`}>
+        <div className="max-w-5xl mx-auto px-6 py-6">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="w-7 h-7 bg-blue-500 rounded-md flex items-center justify-center">
+                <div className="w-4 h-4 bg-white rounded-sm" />
+              </div>
+              <h1 className={`text-xl font-semibold ${darkMode ? 'text-white' : 'text-gray-900'}`}>pypi trends</h1>
           </div>
+            
           <button
             onClick={() => setDarkMode(!darkMode)}
-            style={{
-              width: "48px",
-              height: "48px",
-              borderRadius: "12px",
-              border: `1px solid ${darkMode ? "#475569" : "#e2e8f0"}`,
-              backgroundColor: darkMode ? "#334155" : "#f8fafc",
-              color: darkMode ? "#ffffff" : "#0f172a",
-              cursor: "pointer",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              transition: "all 0.2s ease"
-            }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.backgroundColor = darkMode ? "#475569" : "#f1f5f9";
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.backgroundColor = darkMode ? "#334155" : "#f8fafc";
-            }}
-          >
-            {darkMode ? <Sun size={20} /> : <Moon size={20} />}
+              className={`p-2 rounded-lg transition-colors border ${
+                darkMode 
+                  ? 'bg-gray-700 hover:bg-gray-600 border-gray-600' 
+                  : 'bg-gray-100 hover:bg-gray-200 border-gray-300'
+              }`}
+            >
+              {darkMode ? (
+                <Sun className={`w-4 h-4 ${darkMode ? 'text-gray-300' : 'text-gray-700'}`} />
+              ) : (
+                <Moon className={`w-4 h-4 ${darkMode ? 'text-gray-300' : 'text-gray-700'}`} />
+              )}
           </button>
         </div>
 
+          <p className={`mt-2 text-sm ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>
+            Compare and discover download trends for Python packages over time
+          </p>
+        </div>
+      </div>
+
+      <div className="flex-1 overflow-y-auto">
+        <div className="max-w-5xl mx-auto px-6 py-8">
         {/* Search Section */}
-        <div style={searchSectionStyle}>
-          <div style={searchContainerStyle}>
+          <div className="mb-8">
+            <div className="relative max-w-xl mx-auto">
+              <div className="relative">
+                <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
             <input
               type="text"
-              placeholder="Search PyPI packages..."
+                  placeholder="Enter a Python package..."
               value={searchQuery}
               onChange={(e) => handleSearch(e.target.value)}
               onKeyDown={handleKeyDown}
-              style={inputStyle}
-              onFocus={(e) => {
-                e.currentTarget.style.borderColor = "#3b82f6";
-              }}
-              onBlur={(e) => {
-                e.currentTarget.style.borderColor = darkMode ? "#475569" : "#e2e8f0";
-              }}
-            />
-            {searchResults.length > 0 && (
-              <div style={{
-                position: "absolute",
-                top: "56px",
-                left: "0",
-                right: "0",
-                backgroundColor: darkMode ? "#1e293b" : "#ffffff",
-                border: `1px solid ${darkMode ? "#475569" : "#e2e8f0"}`,
-                borderRadius: "12px",
-                boxShadow: "0 10px 15px -3px rgba(0, 0, 0, 0.1)",
-                zIndex: 10,
-                maxHeight: "300px",
-                overflowY: "auto"
-              }}>
-                {searchResults.map((pkg) => (
-                  <div
-                    key={pkg.name}
-                    onClick={() => addPackage(pkg.name)}
-                    style={{
-                      padding: "16px 20px",
-                      cursor: "pointer",
-                      borderBottom: `1px solid ${darkMode ? "#334155" : "#f1f5f9"}`,
-                      color: darkMode ? "#ffffff" : "#0f172a"
-                    }}
-                    onMouseEnter={(e) => {
-                      e.currentTarget.style.backgroundColor = darkMode ? "#334155" : "#f8fafc";
-                    }}
-                    onMouseLeave={(e) => {
-                      e.currentTarget.style.backgroundColor = "transparent";
-                    }}
-                  >
-                    <div style={{ fontWeight: "600", fontSize: "16px", marginBottom: "4px" }}>
-                      {pkg.name}
-                    </div>
-                    <div style={{ 
-                      fontSize: "14px", 
-                      color: darkMode ? "#94a3b8" : "#64748b" 
-                    }}>
-                      {pkg.description}
-                    </div>
-                  </div>
-                ))}
+                  onFocus={() => searchResults.length > 0 && setShowDropdown(true)}
+                  className={`w-full pl-12 pr-4 py-3 text-base border rounded-lg shadow-sm
+                           focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
+                             darkMode 
+                               ? 'bg-gray-800 border-gray-600 text-white placeholder-gray-400'
+                               : 'bg-white border-gray-300 text-gray-900 placeholder-gray-500'
+                           }`}
+                />
               </div>
-            )}
-          </div>
-
-          {/* Controls */}
-          <div style={controlsStyle}>
-            {/* Period Dropdown */}
-            <div style={dropdownStyle}>
-              <button
-                onClick={() => setShowPeriodDropdown(!showPeriodDropdown)}
-                style={dropdownButtonStyle}
-              >
-                <span>
-                  {PERIOD_OPTIONS.find(p => p.value === selectedPeriod)?.label}
-                </span>
-                <ChevronDown size={16} />
-              </button>
               
-              {showPeriodDropdown && (
-                <div style={{
-                  position: "absolute",
-                  top: "40px",
-                  left: "0",
-                  backgroundColor: darkMode ? "#1e293b" : "#ffffff",
-                  border: `1px solid ${darkMode ? "#475569" : "#e2e8f0"}`,
-                  borderRadius: "8px",
-                  boxShadow: "0 10px 15px -3px rgba(0, 0, 0, 0.1)",
-                  zIndex: 20,
-                  minWidth: "120px"
-                }}>
-                  {PERIOD_OPTIONS.map((option) => (
+              {/* Search Dropdown */}
+              {showDropdown && searchResults.length > 0 && (
+                <div className={`absolute z-10 w-full mt-1 rounded-lg shadow-lg max-h-60 overflow-y-auto border ${
+                  darkMode 
+                    ? 'bg-gray-800 border-gray-600' 
+                    : 'bg-white border-gray-300'
+                }`}>
+                  {searchResults.map((pkg, index) => (
                     <button
-                      key={option.value}
-                      onClick={() => changePeriod(option.value)}
-                      style={{
-                        width: "100%",
-                        padding: "12px 16px",
-                        border: "none",
-                        backgroundColor: selectedPeriod === option.value 
-                          ? (darkMode ? "#334155" : "#f1f5f9")
-                          : "transparent",
-                        color: darkMode ? "#ffffff" : "#0f172a",
-                        textAlign: "left",
-                        cursor: "pointer",
-                        fontSize: "14px"
-                      }}
-                      onMouseEnter={(e) => {
-                        if (selectedPeriod !== option.value) {
-                          e.currentTarget.style.backgroundColor = darkMode ? "#334155" : "#f8fafc";
-                        }
-                      }}
-                      onMouseLeave={(e) => {
-                        if (selectedPeriod !== option.value) {
-                          e.currentTarget.style.backgroundColor = "transparent";
-                        }
-                      }}
+                      key={index}
+                      onClick={() => addPackage(pkg.name)}
+                      className={`w-full px-4 py-3 text-left transition-colors border-b last:border-b-0 ${
+                        darkMode 
+                          ? 'hover:bg-gray-700 border-gray-600' 
+                          : 'hover:bg-gray-100 border-gray-200'
+                      }`}
                     >
-                      {option.label}
+                      <div className={`text-sm font-medium ${darkMode ? 'text-white' : 'text-gray-900'}`}>{pkg.name}</div>
+                      <div className={`text-xs mt-1 truncate ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>{pkg.description}</div>
                     </button>
                   ))}
                 </div>
               )}
             </div>
 
-            {/* Loading indicator */}
-            {loading && (
-              <div style={{
-                display: "flex",
-                alignItems: "center",
-                gap: "8px",
-                color: darkMode ? "#94a3b8" : "#64748b",
-                fontSize: "14px"
-              }}>
-                <Loader2 size={16} className="spin" />
-                Loading data...
+            {/* Selected Packages */}
+            {selectedPackages.length > 0 && (
+              <div className="flex flex-wrap gap-2 mt-6 justify-center">
+                {selectedPackages.map((pkg, index) => (
+                  <div
+                    key={pkg}
+                    className={`flex items-center gap-2 px-3 py-1.5 rounded-full shadow-sm border ${
+                      darkMode 
+                        ? 'bg-gray-800 border-gray-600' 
+                        : 'bg-white border-gray-300'
+                    }`}
+                  >
+                    <div 
+                      className="w-2.5 h-2.5 rounded-full"
+                      style={{ backgroundColor: packageColors[index % packageColors.length] }}
+                    />
+                    <span className={`text-sm font-medium ${darkMode ? 'text-white' : 'text-gray-900'}`}>{pkg}</span>
+                    <button
+                      onClick={() => removePackage(pkg)}
+                      className={`ml-1 p-0.5 rounded-full transition-colors ${
+                        darkMode ? 'hover:bg-gray-700' : 'hover:bg-gray-200'
+                      }`}
+                    >
+                      <X className={`w-3 h-3 ${darkMode ? 'text-gray-400' : 'text-gray-500'}`} />
+                    </button>
+                  </div>
+                ))}
               </div>
             )}
           </div>
-        </div>
 
-        {/* Error Message */}
-        {error && (
-          <div style={{
-            padding: "16px",
-            backgroundColor: "#fef2f2",
-            border: "1px solid #fecaca",
-            borderRadius: "8px",
-            color: "#dc2626",
-            fontSize: "14px",
-            margin: "16px 0"
-          }}>
-            {error}
-          </div>
-        )}
-
-        {/* Chart Section */}
-        <div style={chartSectionStyle}>
-          {selectedPackages.length > 0 ? (
-            <div style={chartCardStyle}>
-              {/* Package Tags */}
-              <div style={packageTagsStyle}>
-                {selectedPackages.map((pkg, index) => {
-                  const pkgData = packagesData.find(p => p.package === pkg);
-                  
-                  return (
-                    <div
-                      key={pkg}
-                      style={{
-                        display: "flex",
-                        alignItems: "center",
-                        gap: "8px",
-                        padding: "8px 16px",
-                        backgroundColor: packageColors[index % packageColors.length] + "20",
-                        border: `2px solid ${packageColors[index % packageColors.length]}`,
-                        borderRadius: "24px",
-                        fontSize: "14px",
-                        fontWeight: "500",
-                        color: darkMode ? "#ffffff" : "#0f172a",
-                        opacity: loading ? 0.5 : (pkgData?.error ? 0.5 : 1)
-                      }}
-                    >
-                      <div
-                        style={{
-                          width: "12px",
-                          height: "12px",
-                          borderRadius: "50%",
-                          backgroundColor: packageColors[index % packageColors.length]
-                        }}
-                      />
-                      {pkg}
-                      {loading && (
-                        <Loader2 size={12} className="spin" />
-                      )}
-                      {!loading && pkgData?.error && (
-                        <span style={{ fontSize: "12px", color: "#dc2626" }}>
-                          (error)
-                        </span>
-                      )}
-                      {!loading && pkgData && (
-                        <button
-                          onClick={() => refreshPackageData(pkg)}
-                          disabled={refreshingPackages.has(pkg)}
-                          style={{
-                            width: "16px",
-                            height: "16px",
-                            border: "none",
-                            backgroundColor: "transparent",
-                            color: darkMode ? "#94a3b8" : "#64748b",
-                            cursor: refreshingPackages.has(pkg) ? "not-allowed" : "pointer",
-                            display: "flex",
-                            alignItems: "center",
-                            justifyContent: "center",
-                            padding: 0,
-                            opacity: refreshingPackages.has(pkg) ? 0.5 : 0.7
-                          }}
-                          onMouseEnter={(e) => {
-                            e.currentTarget.style.opacity = "1";
-                          }}
-                          onMouseLeave={(e) => {
-                            e.currentTarget.style.opacity = refreshingPackages.has(pkg) ? "0.5" : "0.7";
-                          }}
-                          title="Refresh data"
+          {/* Main Content */}
+          {selectedPackages.length > 0 && (
+            <>
+              {/* Period Selector */}
+              <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
+                <h2 className={`text-lg font-medium ${darkMode ? 'text-white' : 'text-gray-900'}`}>
+                  Downloads in past{" "}
+                  <select
+                    value={period}
+                    onChange={(e) => changePeriod(e.target.value as Period)}
+                    className={`ml-2 px-3 py-1 border rounded-md text-base
+                             focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
+                               darkMode 
+                                 ? 'bg-gray-800 border-gray-600 text-white'
+                                 : 'bg-white border-gray-300 text-gray-900'
+                             }`}
                         >
-                          {refreshingPackages.has(pkg) ? (
-                            <Loader2 size={12} className="spin" />
-                          ) : (
-                            <RefreshCw size={12} />
-                          )}
-                        </button>
-                      )}
-                      <button
-                        onClick={() => removePackage(pkg)}
-                        style={{
-                          width: "20px",
-                          height: "20px",
-                          borderRadius: "50%",
-                          border: "none",
-                          backgroundColor: "transparent",
-                          color: darkMode ? "#ffffff" : "#0f172a",
-                          cursor: "pointer",
-                          display: "flex",
-                          alignItems: "center",
-                          justifyContent: "center",
-                          padding: 0
-                        }}
-                      >
-                        <X size={14} />
-                      </button>
-                    </div>
-                  );
-                })}
+                    {PERIOD_OPTIONS.map((option) => (
+                      <option key={option.value} value={option.value}>
+                        {option.label}
+                      </option>
+                    ))}
+                  </select>
+                </h2>
               </div>
 
               {/* Chart */}
+              <div className={`rounded-xl shadow-sm mb-6 border ${
+                darkMode 
+                  ? 'bg-gray-800 border-gray-600' 
+                  : 'bg-white border-gray-300'
+              }`}>
               {loading ? (
+                  <div className="p-8">
                 <ChartSkeleton darkMode={darkMode} />
+                  </div>
               ) : chartData.length > 0 ? (
-                <div style={{ height: "400px", width: "100%" }}>
+                  <div className="p-6">
+                    <div className="w-full h-80">
                   <ResponsiveContainer width="100%" height="100%">
                     <LineChart data={chartData} margin={{ top: 20, right: 30, left: 20, bottom: 20 }}>
                       <XAxis 
                         dataKey="date" 
+                            stroke={darkMode ? "#9CA3AF" : "#6B7280"}
+                            fontSize={12}
+                            tickFormatter={(value) => formatDate(value, period)}
                         axisLine={false}
                         tickLine={false}
-                        tick={{ fontSize: 12, fill: darkMode ? '#94a3b8' : '#64748b' }}
-                        tickFormatter={(str) => formatDate(str, selectedPeriod)}
-                        interval={selectedPeriod === "1month" ? 2 : 
-                                 selectedPeriod === "3month" ? 3 :
-                                 selectedPeriod === "6month" ? 0 :
-                                 selectedPeriod === "1year" ? 1 :
-                                 selectedPeriod === "2year" ? 2 : 
-                                 selectedPeriod === "all" ? 0 : 0}
                       />
                       <YAxis 
+                            stroke={darkMode ? "#9CA3AF" : "#6B7280"}
+                            fontSize={12}
+                            tickFormatter={formatNumber}
                         axisLine={false}
                         tickLine={false}
-                        tick={{ fontSize: 12, fill: darkMode ? '#94a3b8' : '#64748b' }}
-                        tickFormatter={formatNumber}
                       />
-                      <Tooltip
-                        contentStyle={{
-                          backgroundColor: darkMode ? '#1e293b' : '#ffffff',
-                          border: `1px solid ${darkMode ? '#475569' : '#e2e8f0'}`,
-                          borderRadius: '8px',
-                          fontSize: '14px',
-                          color: darkMode ? '#ffffff' : '#0f172a',
-                          boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)'
-                        }}
-                        formatter={(value: any, name: string) => [formatNumber(value), name]}
-                        labelFormatter={(date: string) => formatDate(date, selectedPeriod)}
-                      />
-                      {selectedPackages.map((pkg, index) => {
-                        const pkgData = packagesData.find(p => p.package === pkg);
-                        if (pkgData?.error) return null;
-                        
-                        return (
+                          <Tooltip content={<CustomTooltip />} />
+                          {selectedPackages.map((pkg, index) => (
                           <Line
                             key={pkg}
                             type="monotone"
                             dataKey={pkg}
                             stroke={packageColors[index % packageColors.length]}
-                            strokeWidth={3}
-                            dot={{ fill: packageColors[index % packageColors.length], strokeWidth: 0, r: 4 }}
-                            activeDot={{ r: 6, fill: packageColors[index % packageColors.length] }}
+                              strokeWidth={2.5}
+                              dot={false}
+                              activeDot={{ r: 4, fill: packageColors[index % packageColors.length] }}
                           />
-                        );
-                      })}
+                          ))}
                     </LineChart>
                   </ResponsiveContainer>
                 </div>
-              ) : (
-                <div style={{
-                  height: "400px",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  color: darkMode ? "#94a3b8" : "#64748b"
-                }}>
-                  No data available
-                </div>
-              )}
-
-              {/* Package Stats */}
-              {loading ? (
-                <StatsSkeleton darkMode={darkMode} />
-              ) : (
-                <div style={{
-                  display: "grid",
-                  gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))",
-                  gap: "16px",
-                  marginTop: "32px",
-                  paddingTop: "24px",
-                  borderTop: `1px solid ${darkMode ? "#334155" : "#f1f5f9"}`
-                }}>
-                  {packagesData.map((pkgData, index) => (
-                    <div key={pkgData.package} style={{
-                      padding: "16px",
-                      borderRadius: "8px",
-                      backgroundColor: darkMode ? "#0f172a" : "#f8fafc",
-                      border: `1px solid ${darkMode ? "#334155" : "#e2e8f0"}`,
-                      opacity: pkgData.error ? 0.5 : 1
-                    }}>
-                      <div style={{
-                        display: "flex",
-                        alignItems: "center",
-                        gap: "8px",
-                        marginBottom: "8px"
-                      }}>
-                        <div
-                          style={{
-                            width: "12px",
-                            height: "12px",
-                            borderRadius: "50%",
-                            backgroundColor: packageColors[index % packageColors.length]
-                          }}
-                        />
-                        <span style={{
-                          fontSize: "14px",
-                          fontWeight: "600",
-                          color: darkMode ? "#ffffff" : "#0f172a"
-                        }}>
-                          {pkgData.package}
-                        </span>
-                        {pkgData.cached && (
-                          <span style={{
-                            fontSize: "10px",
-                            color: darkMode ? "#94a3b8" : "#64748b",
-                            backgroundColor: darkMode ? "#334155" : "#f1f5f9",
-                            padding: "2px 6px",
-                            borderRadius: "4px"
-                          }}>
-                            cached
-                          </span>
-                        )}
-                      </div>
-                      {pkgData.error ? (
-                        <div style={{
-                          fontSize: "12px",
-                          color: "#dc2626"
-                        }}>
-                          Error loading data
                         </div>
                       ) : (
-                        <>
-                          <div style={{
-                            fontSize: "20px",
-                            fontWeight: "700",
-                            color: darkMode ? "#ffffff" : "#0f172a",
-                            marginBottom: "4px"
-                          }}>
-                            {formatNumber(pkgData.total_downloads)}
+                  <div className="p-8 text-center">
+                    <div className={`${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+                      No data available for the selected packages and period
                           </div>
-                          <div style={{
-                            fontSize: "12px",
-                            color: darkMode ? "#94a3b8" : "#64748b"
-                          }}>
-                            total downloads ({pkgData.period})
                           </div>
-                        </>
                       )}
                     </div>
-                  ))}
+
+              {/* Package Download Totals */}
+              {!loading && packagesData.length > 0 && (
+                <div className={`grid gap-4 ${
+                  packagesData.length === 1 ? 'grid-cols-1 max-w-sm mx-auto' :
+                  packagesData.length === 2 ? 'grid-cols-1 md:grid-cols-2' :
+                  'grid-cols-1 md:grid-cols-3'
+                }`}>
+                  {packagesData.map((pkg, index) => {
+                    const totalForPackage = pkg.data.reduce((sum: number, item: any) => sum + item.downloads, 0);
+                    return (
+                      <div key={pkg.package} className={`rounded-xl shadow-sm p-6 border ${
+                        darkMode ? 'bg-gray-800 border-gray-600' : 'bg-white border-gray-300'
+                      }`}>
+                        <div className="flex items-center gap-2 mb-2">
+                          <div 
+                            className="w-3 h-3 rounded-full"
+                            style={{ backgroundColor: packageColors[index % packageColors.length] }}
+                          />
+                          <div className={`text-sm ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>{pkg.package}</div>
+                        </div>
+                        <div className={`text-2xl font-semibold ${darkMode ? 'text-white' : 'text-gray-900'}`}>
+                          {formatNumber(totalForPackage)}
+                        </div>
+                      </div>
+                    );
+                  })}
                 </div>
               )}
-            </div>
-          ) : (
-            <div style={{
-              ...chartCardStyle,
-              textAlign: "center",
-              padding: "80px 32px"
-            }}>
-              <div style={{
-                width: "64px",
-                height: "64px",
-                backgroundColor: darkMode ? "#334155" : "#f1f5f9",
-                borderRadius: "16px",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                margin: "0 auto 24px"
-              }}>
-                <Plus size={32} color={darkMode ? "#94a3b8" : "#64748b"} />
+            </>
+          )}
+
+          {/* Empty State */}
+          {selectedPackages.length === 0 && (
+            <div className="text-center py-20">
+              <div className={`w-16 h-16 rounded-full mx-auto mb-6 flex items-center justify-center shadow-sm border ${
+                darkMode ? 'bg-gray-800 border-gray-600' : 'bg-white border-gray-300'
+              }`}>
+                <Search className="w-8 h-8 text-gray-400" />
               </div>
-              <h3 style={{
-                fontSize: "20px",
-                fontWeight: "600",
-                color: darkMode ? "#ffffff" : "#0f172a",
-                margin: "0 0 8px 0"
-              }}>
-                Start Comparing Packages
+              <h3 className={`text-lg font-medium mb-2 ${darkMode ? 'text-white' : 'text-gray-900'}`}>
+                Search for Python packages
               </h3>
-              <p style={{
-                fontSize: "16px",
-                color: darkMode ? "#94a3b8" : "#64748b",
-                margin: 0
-              }}>
-                Search for Python packages above to compare their download trends
+              <p className={`max-w-md mx-auto ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+                Start by searching for Python packages above to compare their download trends over time.
               </p>
+            </div>
+          )}
+
+          {/* Error State */}
+          {error && (
+            <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-4 mb-6">
+              <div className="text-red-800 dark:text-red-200 text-sm">
+                <strong>Error:</strong> {error}
+              </div>
             </div>
           )}
         </div>
