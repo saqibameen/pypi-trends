@@ -29,48 +29,6 @@ PyPI Trends allows developers to visualize and compare download statistics for P
 - **Data Source**: Google BigQuery (PyPI public dataset)
 - **Caching**: Cloudflare Cache API for optimal performance
 
-## API
-
-The application provides a public API for accessing PyPI download data:
-
-### Get Package Time Series Data
-```
-GET /api/downloads/{package}/timeseries?period={period}&exclude_ci_cd={boolean}
-```
-
-**Parameters:**
-- `package` (required): PyPI package name (e.g., "requests", "numpy")
-- `period` (optional): Time period - `1month`, `3month`, `6month`, `1year`, `2year`, `all` (default: `1year`)
-- `exclude_ci_cd` (optional): Filter out CI/CD downloads - `true`/`false` (default: `true`)
-
-**Example:**
-```bash
-curl "https://pypi-trends.saqib-1a3.workers.dev/api/downloads/requests/timeseries?period=6month"
-```
-
-**Response:**
-```json
-{
-  "package": "requests",
-  "period": "6month",
-  "exclude_ci_cd": true,
-  "data": [
-    {"date": "2024-01-01", "downloads": 12500000},
-    {"date": "2024-02-01", "downloads": 13200000}
-  ],
-  "total_downloads": 75000000,
-  "query_time": "2024-06-28T10:30:00Z",
-  "cached": false
-}
-```
-
-### Health Check
-```
-GET /api/health
-```
-
-Returns API status and basic metrics.
-
 ## Development
 
 ### Prerequisites
@@ -82,6 +40,7 @@ Returns API status and basic metrics.
 ### Local Setup
 
 1. **Clone and install dependencies:**
+
    ```bash
    git clone <your-repo>
    cd pypi-trends
@@ -89,21 +48,23 @@ Returns API status and basic metrics.
    ```
 
 2. **Set up Google Cloud credentials:**
+
    - Create a service account with BigQuery Data Viewer permissions
    - Download the service account key JSON
    - Add to your environment variables
 
 3. **Configure environment variables:**
+
    ```bash
    # For local development, create .env.local with:
-   
+
    # Required for BigQuery API access
    GOOGLE_CLOUD_PROJECT_ID=your-google-cloud-project-id
    GOOGLE_CLOUD_KEY={"type":"service_account","project_id":"your-project",...}
-   
+
    # Optional: Google Analytics Measurement ID (format: G-XXXXXXXXXX)
    VITE_GA_MEASUREMENT_ID=G-XXXXXXXXXX
-   
+
    # For production deployment, set these as Cloudflare secrets:
    wrangler secret put GOOGLE_CLOUD_PROJECT_ID
    wrangler secret put GOOGLE_CLOUD_KEY
@@ -111,6 +72,7 @@ Returns API status and basic metrics.
    ```
 
 4. **Start development server:**
+
    ```bash
    npm run dev
    ```
@@ -176,6 +138,7 @@ npm run deploy
 ## Data Source
 
 This application uses Google BigQuery's public PyPI dataset, which contains:
+
 - Download events for all PyPI packages
 - Metadata about downloads (timestamp, file info, installer type)
 - Updated daily with fresh download statistics

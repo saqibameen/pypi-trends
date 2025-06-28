@@ -223,7 +223,7 @@ export const meta: Route.MetaFunction = () => {
     { property: "og:title", content: "PyPI Trends - Compare Python Package Download Statistics" },
     { property: "og:description", content: "Compare Python package download trends and statistics from PyPI. Visualize and analyze package popularity over time." },
     { property: "og:type", content: "website" },
-    { property: "og:url", content: "https://pypi-trends.saqib-1a3.workers.dev" },
+    { property: "og:url", content: "https://pypi-trends.saqib-1a3.workers.dev/" },
     { name: "twitter:card", content: "summary_large_image" },
     { name: "twitter:title", content: "PyPI Trends - Compare Python Package Download Statistics" },
     { name: "twitter:description", content: "Compare Python package download trends and statistics from PyPI. Visualize and analyze package popularity over time." },

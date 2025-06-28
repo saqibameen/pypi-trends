@@ -22,13 +22,11 @@ downloadsRouter.get("/:packageName/timeseries", async (c) => {
     const packageName = c.req.param("packageName");
     const period = c.req.query("period") || "1year";
     const excludeCiCd = c.req.query("exclude_ci_cd") !== "false"; // Default to true
-    const cacheBust = c.req.query("_t"); // Cache busting timestamp
 
     console.log("=== Time Series API Call Debug ===");
     console.log("Package:", packageName);
     console.log("Period:", period);
     console.log("Exclude CI/CD:", excludeCiCd);
-    console.log("Cache bust:", cacheBust ? "YES" : "NO");
 
     if (!validatePackageName(packageName)) {
       return c.json({ error: "Package name is required" }, 400);
@@ -51,15 +49,13 @@ downloadsRouter.get("/:packageName/timeseries", async (c) => {
       period + (excludeCiCd ? "_no_ci" : "_with_ci")
     );
 
-    // Try to get from cache first (skip if cache busting)
-    if (!cacheBust) {
-      const cachedData = await getCachedResponse(cacheKey);
-      if (cachedData) {
-        return c.json({
-          ...cachedData,
-          cached: true,
-        });
-      }
+    // Try to get from cache first
+    const cachedData = await getCachedResponse(cacheKey);
+    if (cachedData) {
+      return c.json({
+        ...cachedData,
+        cached: true,
+      });
     }
 
     // Get environment variables
