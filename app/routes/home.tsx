@@ -7,6 +7,7 @@ import PeriodSelector, { type Period } from "../components/PeriodSelector";
 import DownloadChart from "../components/DownloadChart";
 import PackageStats from "../components/PackageStats";
 import EmptyState from "../components/EmptyState";
+import type { Route } from "./+types/home";
 
 // Package colors for chart lines
 const packageColors = [
@@ -210,7 +211,24 @@ const formatDate = (dateStr: string, period: Period) => {
   }
 };
 
-
+// Add meta function for SEO
+export const meta: Route.MetaFunction = () => {
+  return [
+    { title: "PyPI Trends - Compare Python Package Download Statistics" },
+    { 
+      name: "description", 
+      content: "Compare Python package download trends and statistics from PyPI. Visualize and analyze package popularity over time with interactive charts and detailed statistics." 
+    },
+    { name: "keywords", content: "PyPI, Python packages, download trends, package statistics, Python analytics, package comparison" },
+    { property: "og:title", content: "PyPI Trends - Compare Python Package Download Statistics" },
+    { property: "og:description", content: "Compare Python package download trends and statistics from PyPI. Visualize and analyze package popularity over time." },
+    { property: "og:type", content: "website" },
+    { property: "og:url", content: "https://pypi-trends.saqib-1a3.workers.dev" },
+    { name: "twitter:card", content: "summary_large_image" },
+    { name: "twitter:title", content: "PyPI Trends - Compare Python Package Download Statistics" },
+    { name: "twitter:description", content: "Compare Python package download trends and statistics from PyPI. Visualize and analyze package popularity over time." },
+  ];
+};
 
 export default function Home() {
   // State management

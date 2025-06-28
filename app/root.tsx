@@ -30,11 +30,30 @@ export function Layout({ children }: { children: React.ReactNode }) {
       <head>
         <meta charSet="utf-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
+        <link rel="icon" href="/favicon.ico" />
+        <Meta />
+        <Links />
       </head>
       <body className="font-sans antialiased">
         {children}
         <ScrollRestoration />
         <Scripts />
+        {/* Google Analytics */}
+        {import.meta.env.VITE_GA_MEASUREMENT_ID && (
+          <>
+            <script async src={`https://www.googletagmanager.com/gtag/js?id=${import.meta.env.VITE_GA_MEASUREMENT_ID}`}></script>
+            <script
+              dangerouslySetInnerHTML={{
+                __html: `
+                  window.dataLayer = window.dataLayer || [];
+                  function gtag(){dataLayer.push(arguments);}
+                  gtag('js', new Date());
+                  gtag('config', '${import.meta.env.VITE_GA_MEASUREMENT_ID}');
+                `,
+              }}
+            />
+          </>
+        )}
       </body>
     </html>
   );
