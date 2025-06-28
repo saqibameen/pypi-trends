@@ -28,7 +28,7 @@ export function Welcome({ message }: { message: string }) {
               {resources.map(({ href, text, icon }) => (
                 <li key={href}>
                   <a
-                    className="group flex items-center gap-3 self-stretch p-3 leading-normal text-blue-700 hover:underline dark:text-blue-500"
+                    className="group flex items-center gap-3 self-stretch p-3 leading-normal text-blue-700 hover:underline dark:text-blue-400 dark:hover:text-blue-300"
                     href={href}
                     target="_blank"
                     rel="noreferrer"
@@ -38,7 +38,7 @@ export function Welcome({ message }: { message: string }) {
                   </a>
                 </li>
               ))}
-              <li className="self-stretch p-3 leading-normal">{message}</li>
+              <li className="self-stretch p-3 leading-normal dark:text-gray-200">{message}</li>
             </ul>
           </nav>
         </div>

@@ -4,7 +4,7 @@
  */
 {
   "$schema": "node_modules/wrangler/config-schema.json",
-  "name": "react-router-hono-cloudflare",
+  "name": "pypi-trends",
   "compatibility_date": "2025-04-04",
   "main": "./workers/app.ts",
   "vars": {
@@ -12,7 +12,8 @@
   },
   "observability": {
     "enabled": true
-  }
+  },
+  "compatibility_flags": ["nodejs_compat"],
   /**
    * Smart Placement
    * Docs: https://developers.cloudflare.com/workers/configuration/smart-placement/#smart-placement
@@ -29,6 +30,14 @@
   /**
    * Environment Variables
    * https://developers.cloudflare.com/workers/wrangler/configuration/#environment-variables
+   * 
+   * Required environment variables for PyPI Downloads API:
+   * - GOOGLE_CLOUD_PROJECT_ID: Your Google Cloud Project ID
+   * - GOOGLE_CLOUD_KEY: Your Google Cloud Service Account Key (JSON)
+   * 
+   * Set these using:
+   * wrangler secret put GOOGLE_CLOUD_PROJECT_ID
+   * wrangler secret put GOOGLE_CLOUD_KEY
    */
   // "vars": { "MY_VARIABLE": "production_value" },
   /**
