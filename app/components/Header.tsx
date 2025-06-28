@@ -17,7 +17,7 @@ export default function Header({ darkMode }: HeaderProps) {
               <h1 className={`text-xl font-semibold ${
                 darkMode ? 'text-white' : 'text-gray-900'
               }`}>
-                pypi
+                PyPI
               </h1>
               <span className={`text-xl font-light ${
                 darkMode ? 'text-blue-400' : 'text-blue-600'

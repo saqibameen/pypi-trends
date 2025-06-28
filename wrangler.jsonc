@@ -6,7 +6,11 @@
   "$schema": "node_modules/wrangler/config-schema.json",
   "name": "pypi-trends",
   "compatibility_date": "2025-04-04",
-  "main": "./workers/app.ts",
+  "main": "./build/server/index.js",
+  "no_bundle": true,
+  "assets": {
+    "directory": "./build/client"
+  },
   "vars": {
     "VALUE_FROM_CLOUDFLARE": "Hello from Cloudflare, inside React Router!"
   },
