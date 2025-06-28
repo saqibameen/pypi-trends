@@ -40,10 +40,10 @@ export default function DownloadChart({
   period
 }: DownloadChartProps) {
   return (
-    <div className={`rounded-xl shadow-sm mb-6 border ${
+    <div className={`rounded-2xl mb-8 transition-all duration-300 border ${
       darkMode 
-        ? 'bg-gray-800 border-gray-600' 
-        : 'bg-white border-gray-300'
+        ? 'bg-gray-800 border-gray-700' 
+        : 'bg-white border-gray-200 shadow-lg shadow-gray-100/50'
     }`}>
       {loading ? (
         <div className="p-8">
@@ -58,16 +58,20 @@ export default function DownloadChart({
                   dataKey="date" 
                   stroke={darkMode ? "#9CA3AF" : "#6B7280"}
                   fontSize={12}
+                  fontWeight={300}
                   tickFormatter={(value) => formatDate(value, period)}
                   axisLine={false}
                   tickLine={false}
+                  dy={8}
                 />
                 <YAxis 
                   stroke={darkMode ? "#9CA3AF" : "#6B7280"}
                   fontSize={12}
+                  fontWeight={300}
                   tickFormatter={formatNumber}
                   axisLine={false}
                   tickLine={false}
+                  dx={-8}
                 />
                 <Tooltip content={<CustomTooltip />} />
                 {selectedPackages.map((pkg, index) => (
@@ -78,7 +82,7 @@ export default function DownloadChart({
                     stroke={packageColors[index % packageColors.length]}
                     strokeWidth={2.5}
                     dot={false}
-                    activeDot={{ r: 4, fill: packageColors[index % packageColors.length] }}
+                    activeDot={{ r: 5, fill: packageColors[index % packageColors.length], strokeWidth: 2, stroke: 'white' }}
                   />
                 ))}
               </LineChart>
@@ -86,8 +90,8 @@ export default function DownloadChart({
           </div>
         </div>
       ) : (
-        <div className="p-8 text-center">
-          <div className={`${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+        <div className="p-12 text-center">
+          <div className={`text-base font-light ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
             No data available for the selected packages and period
           </div>
         </div>

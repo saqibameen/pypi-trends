@@ -4,7 +4,6 @@ const PERIOD_OPTIONS = [
   { label: "6 Months", value: "6month" },
   { label: "1 Year", value: "1year" },
   { label: "2 Years", value: "2year" },
-  { label: "5 Years", value: "5year" },
   { label: "All Time", value: "all" },
 ] as const;
 
@@ -22,17 +21,19 @@ export default function PeriodSelector({
   onPeriodChange
 }: PeriodSelectorProps) {
   return (
-    <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
-      <h2 className={`text-lg font-medium ${darkMode ? 'text-white' : 'text-gray-900'}`}>
-        Downloads in past{" "}
+    <div className="flex">
+      <div className={`inline-flex items-center gap-3 px-4 py-3 rounded-xl `}>
+        <span className={`text-sm font-medium ${darkMode ? 'text-gray-300' : 'text-gray-600'}`}>
+          Downloads in past:
+        </span>
         <select
           value={period}
           onChange={(e) => onPeriodChange(e.target.value as Period)}
-          className={`ml-2 px-3 py-1 border rounded-md text-base
-                   focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
+          className={`px-3 py-1 rounded-lg text-sm font-medium cursor-pointer transition-all duration-300 border
+                   focus:outline-none focus:ring-2 focus:ring-blue-500/30 ${
                      darkMode 
-                       ? 'bg-gray-800 border-gray-600 text-white'
-                       : 'bg-white border-gray-300 text-gray-900'
+                       ? 'bg-gray-700 border-gray-600 text-white hover:bg-gray-600'
+                       : 'bg-white border-gray-200 text-gray-900 hover:bg-gray-50 shadow-sm'
                    }`}
         >
           {PERIOD_OPTIONS.map((option) => (
@@ -41,7 +42,7 @@ export default function PeriodSelector({
             </option>
           ))}
         </select>
-      </h2>
+      </div>
     </div>
   );
 }

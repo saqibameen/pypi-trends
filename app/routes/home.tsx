@@ -145,7 +145,6 @@ const transformDataForChart = (packagesData: PackageTimeSeriesData[]): any[] => 
     "6month": 8,     // Monthly for 6 months
     "1year": 15,     // Monthly for 1 year
     "2year": 30,     // Monthly for 2 years
-    "5year": 60,     // Monthly for 5 years
     "all": 10        // Yearly
   };
 
@@ -203,7 +202,6 @@ const formatDate = (dateStr: string, period: Period) => {
         year: 'numeric'
       });
     case "2year":
-    case "5year":
     case "all":
       // Yearly: "2024"
       return date.getFullYear().toString();
@@ -242,6 +240,21 @@ export default function Home() {
       document.documentElement.classList.remove('dark');
     }
   }, [darkMode]);
+
+  // Load saved selected packages from localStorage on mount
+  useEffect(() => {
+    const savedPackages = localStorage.getItem('pypi-trends-packages');
+    if (savedPackages) {
+      try {
+        const packages = JSON.parse(savedPackages);
+        if (Array.isArray(packages) && packages.length > 0) {
+          setSelectedPackages(packages);
+        }
+      } catch (error) {
+        console.error('Error loading saved packages:', error);
+      }
+    }
+  }, []);
 
   // Fetch data for all selected packages
   const fetchAllPackagesData = async () => {
@@ -330,10 +343,21 @@ export default function Home() {
     setPeriod(period);
   };
 
+  // Save selected packages to localStorage whenever they change
+  useEffect(() => {
+    if (selectedPackages.length > 0) {
+      localStorage.setItem('pypi-trends-packages', JSON.stringify(selectedPackages));
+    } else {
+      localStorage.removeItem('pypi-trends-packages');
+    }
+  }, [selectedPackages]);
+
   // Fetch data when packages or period changes
   useEffect(() => {
     fetchAllPackagesData();
   }, [selectedPackages, period]);
+
+
 
   // Prepare chart data
   const chartData = transformDataForChart(packagesData);
@@ -348,10 +372,10 @@ export default function Home() {
 
   return (
     <div className={`h-screen flex flex-col ${darkMode ? 'bg-gray-900' : 'bg-gray-50'}`}>
-      <Header darkMode={darkMode} onToggleDarkMode={() => setDarkMode(!darkMode)} />
+      <Header darkMode={darkMode} />
 
       <div className="flex-1 overflow-y-auto">
-        <div className="max-w-5xl mx-auto px-6 py-8">
+        <div className="max-w-4xl mx-auto px-8 py-6">
           <SearchBar
             darkMode={darkMode}
             searchQuery={searchQuery}
@@ -363,20 +387,31 @@ export default function Home() {
             onAddPackage={addPackage}
           />
 
-          <PackageTags
-            darkMode={darkMode}
-            selectedPackages={selectedPackages}
-            packageColors={packageColors}
-            onRemovePackage={removePackage}
-          />
-
-          {selectedPackages.length > 0 && (
-            <>
+          {selectedPackages.length > 0 ? (
+            <div className="flex items-center justify-between mb-6">
+              <PackageTags
+                darkMode={darkMode}
+                selectedPackages={selectedPackages}
+                packageColors={packageColors}
+                onRemovePackage={removePackage}
+              />
               <PeriodSelector
                 darkMode={darkMode}
                 period={period}
                 onPeriodChange={changePeriod}
               />
+            </div>
+          ) : (
+            <PackageTags
+              darkMode={darkMode}
+              selectedPackages={selectedPackages}
+              packageColors={packageColors}
+              onRemovePackage={removePackage}
+            />
+          )}
+
+          {selectedPackages.length > 0 && (
+            <>
 
               <DownloadChart
                 darkMode={darkMode}

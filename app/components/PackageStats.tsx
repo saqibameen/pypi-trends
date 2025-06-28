@@ -43,15 +43,15 @@ export default function PackageStats({
       {packagesData.map((pkg, index) => {
         const totalForPackage = pkg.data.reduce((sum: number, item: any) => sum + item.downloads, 0);
         return (
-          <div key={pkg.package} className={`rounded-xl shadow-sm p-6 border ${
-            darkMode ? 'bg-gray-800 border-gray-600' : 'bg-white border-gray-300'
+          <div key={pkg.package} className={`rounded-2xl p-6 transition-all duration-300 border ${
+            darkMode ? 'bg-gray-800 border-gray-700 hover:bg-gray-750' : 'bg-white border-gray-200 hover:shadow-md shadow-gray-100/50'
           }`}>
-            <div className="flex items-center gap-2 mb-2">
+            <div className="flex items-center gap-2 mb-3">
               <div 
                 className="w-3 h-3 rounded-full"
                 style={{ backgroundColor: packageColors[index % packageColors.length] }}
               />
-              <div className={`text-sm ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>{pkg.package}</div>
+              <div className={`text-sm font-medium ${darkMode ? 'text-gray-300' : 'text-gray-600'}`}>{pkg.package}</div>
             </div>
             <div className={`text-2xl font-semibold ${darkMode ? 'text-white' : 'text-gray-900'}`}>
               {formatNumber(totalForPackage)}
