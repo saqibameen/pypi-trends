@@ -1,6 +1,7 @@
 export interface Env {
   GOOGLE_CLOUD_PROJECT_ID: string;
   GOOGLE_CLOUD_KEY: string;
+  VITE_GA_MEASUREMENT_ID: string;
 }
 
 export interface DownloadResponse {

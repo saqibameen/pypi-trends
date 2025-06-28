@@ -4,6 +4,7 @@
 declare namespace Cloudflare {
 	interface Env {
 		VALUE_FROM_CLOUDFLARE: "Hello from Cloudflare, inside React Router!";
+		VITE_GA_MEASUREMENT_ID: string;
 		GOOGLE_CLOUD_PROJECT_ID: string;
 		GOOGLE_CLOUD_KEY: string;
 	}
@@ -13,7 +14,7 @@ type StringifyValues<EnvType extends Record<string, unknown>> = {
 	[Binding in keyof EnvType]: EnvType[Binding] extends string ? EnvType[Binding] : string;
 };
 declare namespace NodeJS {
-	interface ProcessEnv extends StringifyValues<Pick<Cloudflare.Env, "VALUE_FROM_CLOUDFLARE" | "GOOGLE_CLOUD_PROJECT_ID" | "GOOGLE_CLOUD_KEY">> {}
+	interface ProcessEnv extends StringifyValues<Pick<Cloudflare.Env, "VALUE_FROM_CLOUDFLARE" | "GOOGLE_CLOUD_PROJECT_ID" | "GOOGLE_CLOUD_KEY" | "VITE_GA_MEASUREMENT_ID">> {}
 }
 
 // Begin runtime types

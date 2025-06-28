@@ -8,7 +8,8 @@
   "compatibility_date": "2025-04-04",
   "main": "./workers/app.ts",
   "vars": {
-    "VALUE_FROM_CLOUDFLARE": "Hello from Cloudflare, inside React Router!"
+    "VALUE_FROM_CLOUDFLARE": "Hello from Cloudflare, inside React Router!",
+    "VITE_GA_MEASUREMENT_ID": "G-G4T8368GVJ"
   },
   "observability": {
     "enabled": true

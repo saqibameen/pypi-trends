@@ -21,12 +21,6 @@ const requestHandler = createRequestHandler(
 
 const app = new Hono<{ Bindings: Env }>();
 
-// Debug logging for environment variables
-console.log("=== Environment Variables Debug ===");
-console.log("NODE_ENV:", import.meta.env.MODE);
-console.log("Note: Environment variables will be available in route handlers via c.env");
-console.log("===================================");
-
 // Enable CORS for all routes
 app.use("*", cors());
 
